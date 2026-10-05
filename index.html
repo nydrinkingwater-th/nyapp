@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NY น้ำดื่ม">
+<link rel="icon" id="fav" href="data:,">
+<link rel="apple-touch-icon" id="ati" href="">
+<title>บิลเงินสด - น้ำดื่มเอ็นวาย</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{color-scheme:light;--bg:#F2F2F7;--pri:#0A84FF;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);font-family:-apple-system,"Noto Sans Thai","Thonburi",sans-serif;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+.card{background:#fff;border-radius:22px;box-shadow:0 2px 14px rgba(10,60,120,.09)}
+.inp{width:100%;background:#F2F2F7;border-radius:12px;padding:12px 14px;font-size:16px;outline:none;transition:box-shadow .2s}
+.inp:focus{box-shadow:0 0 0 2px var(--pri)}
+.btn{border-radius:14px;font-weight:600;padding:13px 16px;transition:transform .12s,box-shadow .2s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{transform:scale(.96)}
+.pri{background:linear-gradient(135deg,#38BDF8,#0A84FF);color:#fff;box-shadow:0 4px 14px rgba(10,132,255,.35)}
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes sheet{from{transform:translateY(100%)}to{transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{0%{transform:scale(.96)}55%{transform:scale(1.03)}100%{transform:scale(1)}}
+@keyframes flow{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.anim{animation:up .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*70ms)}
+.pop{animation:pop .35s ease-out}
+.sheet{animation:sheet .35s cubic-bezier(.2,.8,.2,1)}
+.fade{animation:fade .25s ease-out}
+.hero{background:linear-gradient(120deg,#38BDF8,#0A84FF,#2563EB,#38BDF8);background-size:300% 300%;animation:flow 9s ease infinite}
+.bob{animation:bob 3s ease-in-out infinite}
+@keyframes draw{to{stroke-dashoffset:0}}
+:root{--spring:cubic-bezier(.32,1.28,.5,1)}
+body{background:linear-gradient(180deg,#D4EAFF,#F2F2F7 340px) no-repeat #F2F2F7}
+.pop{animation:pop .45s var(--spring)}
+.sheet{animation:sheet .5s var(--spring)}
+.sheet::before{content:"";display:block;width:38px;height:5px;border-radius:3px;background:#D1D5DB;margin:-8px auto 10px}
+.press{transition:transform .25s var(--spring)}.press:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{
+ @page{margin:8mm}
+ body{background:#fff}
+ #app,#bar,#tabs,#toast,.noprint{display:none!important}
+ #ov>div{position:static!important;overflow:visible!important;background:#fff!important;padding:0!important}
+ #ov .wrap{max-width:none!important;padding:0!important}
+}
+</style>
+</head>
+<body class="text-slate-800">
+<div id="app" class="max-w-md mx-auto px-4 pt-3" style="padding-bottom:190px"></div>
+<div id="bar" class="fixed left-0 right-0 max-w-md mx-auto px-4" style="bottom:calc(66px + env(safe-area-inset-bottom,0px))"></div>
+<nav id="tabs" class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-slate-200 flex max-w-md mx-auto" style="padding-bottom:env(safe-area-inset-bottom,0px)"></nav>
+<div id="toast" class="fixed left-1/2 bg-slate-900/90 text-white text-sm px-4 py-2 rounded-full z-[99] pointer-events-none flex items-center gap-2" style="top:calc(env(safe-area-inset-top,0px) + 12px);transform:translate(-50%,-20px);opacity:0;transition:all .3s"></div>
+<div id="nav" class="fixed top-0 left-0 right-0 z-40 max-w-md mx-auto text-center bg-white/70 backdrop-blur-xl border-b border-slate-200/70 pointer-events-none" style="padding-top:calc(env(safe-area-inset-top,0px) + 10px);padding-bottom:10px;opacity:0;transition:opacity .25s"><b></b></div>
+<div id="ov"></div>
+
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ld=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
+const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const money=n=>Number(n).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const P={cart:'M3 4h2l2.4 10.2a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.8L20 8H6.2M9 20h.01M17 20h.01',box:'M21 8l-9-5-9 5v8l9 5 9-5V8zM3.3 7.5L12 12.5l8.7-5M12 22V12.5',set:'M4 7h9M17 7h3M4 17h3M11 17h9M15 4v6M9 14v6',plus:'M12 5v14M5 12h14',minus:'M5 12h14',x:'M6 6l12 12M18 6L6 18',camera:'M4 8h3l2-3h6l2 3h3v11H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8',share:'M12 3v12M8 7l4-4 4 4M5 12v8h14v-8',printer:'M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z',dl:'M12 3v12M8 11l4 4 4-4M5 20h14',back:'M15 5l-7 7 7 7',check:'M5 12l5 5 9-10',trash:'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13',edit:'M4 20h4L19 9l-4-4L4 16z',file:'M7 3h8l4 4v14H7zM14 3v5h5M10 13h6M10 17h6',lock:'M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3',search:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4'};
+const ic=(n,c='w-5 h-5')=>`<svg viewBox="0 0 24 24" class="${c}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${P[n]}"/></svg>`;
+const svg=b=>'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E0F2FE"/><stop offset="1" stop-color="#7DD3FC"/></linearGradient></defs><rect width="120" height="120" fill="url(#g)"/>${b}</svg>`);
+const B='<rect x="50" y="14" width="20" height="10" rx="3" fill="#1D4ED8"/><path d="M48 26h24l8 14v62a6 6 0 0 1-6 6H46a6 6 0 0 1-6-6V40z" fill="#fff" stroke="#3B82F6" stroke-width="3"/><path d="M42 62h36v40a4 4 0 0 1-4 4H46a4 4 0 0 1-4-4z" fill="#38BDF8"/>';
+const IC={
+ bottle:svg(B),
+ pack:svg(`<g transform="translate(-18 20) scale(.7)">${B}</g><g transform="translate(46 20) scale(.7)">${B}</g><g transform="translate(10 8) scale(.85)">${B}</g>`),
+ jug:svg('<rect x="44" y="12" width="32" height="12" rx="4" fill="#1D4ED8"/><path d="M38 28h44a8 8 0 0 1 8 8v66a6 6 0 0 1-6 6H36a6 6 0 0 1-6-6V36a8 8 0 0 1 8-8z" fill="#38BDF8" stroke="#2563EB" stroke-width="3"/><rect x="40" y="52" width="40" height="26" rx="4" fill="#fff"/><text x="60" y="71" font-size="14" font-weight="700" text-anchor="middle" fill="#1D4ED8">20L</text>')
+};
+IC.logo='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="l" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38BDF8"/><stop offset="1" stop-color="#1D4ED8"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#l)"/><path d="M50 12s20 21 20 36a20 20 0 0 1-40 0c0-15 20-36 20-36z" fill="#fff" opacity=".22"/><text x="50" y="64" font-family="Arial,sans-serif" font-weight="800" font-size="42" text-anchor="middle" fill="#fff">NY</text></svg>');
+const DEF=[
+ {id:'p1',name:'น้ำดื่ม 600 ml',unit:'แพ็ค',price:42,detail:'บรรจุ 12 ขวด',img:IC.pack},
+ {id:'p2',name:'น้ำดื่ม 1.5 ลิตร',unit:'แพ็ค',price:48,detail:'บรรจุ 6 ขวด',img:IC.pack},
+ {id:'p3',name:'น้ำดื่ม 600 ml (ขวดเดี่ยว)',unit:'ขวด',price:5,detail:'ขวดละ 600 ml',img:IC.bottle},
+ {id:'p4',name:'น้ำดื่มถัง 20 ลิตร',unit:'ถัง',price:30,detail:'น้ำดื่มบรรจุถัง',img:IC.jug}
+];
+let S={q:'',tab:'sell',cart:{},cust:{n:'',c:''},prods:ld('ny_p',DEF),set:ld('ny_s',{pp:'',ph:'',ad:'',logo:''}),cnt:ld('ny_c',{})},F=null,bill=null;
+const logo=()=>S.set.logo||IC.logo;
+const SHOP={pp:'0985649592',ph:'081-738-6390',ad:'63 ถ.ราษอุทิศ 2 ซอย 5 จังหวัด อำเภอเมืองสงขลา'};
+
+function toast(m){const t=$('#toast');t.innerHTML=ic('check','w-4 h-4')+esc(m);t.style.opacity=1;t.style.transform='translate(-50%,0)';clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity=0;t.style.transform='translate(-50%,-20px)'},1800)}
+const total=()=>S.prods.reduce((s,p)=>s+p.price*(S.cart[p.id]||0),0);
+const count=()=>S.prods.reduce((s,p)=>s+(S.cart[p.id]||0),0);
+function bt(n){
+ const d=['ศูนย์','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'],u=['','สิบ','ร้อย','พัน','หมื่น','แสน'];
+ const r=s=>{let o='';const L=s.length;for(let i=0;i<L;i++){const x=+s[i],p=L-i-1;if(!x)continue;if(p==1&&x==1);else if(p==1&&x==2)o+='ยี่';else if(p==0&&x==1&&L>1)o+='เอ็ด';else o+=d[x];o+=u[p]}return o};
+ const f=s=>s.length>6?f(s.slice(0,-6))+'ล้าน'+r(s.slice(-6)):r(s);
+ const w=Math.floor(n+1e-9),st=Math.round((n-w)*100);
+ return (w?f(String(w)):'ศูนย์')+'บาท'+(st?r(String(st))+'สตางค์':'ถ้วน');
+}
+
+function tabs(){
+ $('#tabs').innerHTML=[['sell','cart','ขายสินค้า'],['prods','box','สินค้า'],['set','set','ตั้งค่า']].map(([k,i,l])=>`<button onclick="go('${k}')" class="flex-1 py-2 flex flex-col items-center gap-0.5 text-[11px] ${S.tab==k?'text-blue-600 font-semibold':'text-slate-400'}">${ic(i,'w-6 h-6')}${l}</button>`).join('');
+}
+function go(t){S.tab=t;tabs();scrollTo(0,0);render()}
+function render(){({sell:rSell,prods:rProds,set:rSet})[S.tab]();bar();$('#nav b').textContent={sell:'ขายสินค้า',prods:'สินค้า',set:'ตั้งค่า'}[S.tab]}
+
+function rSell(){
+ $('#app').innerHTML=`
+ <h1 class="text-[34px] font-bold tracking-tight mb-2 anim">ขายสินค้า</h1>
+ <div class="card px-4 py-3 flex items-center gap-3 mb-4 anim">
+  <img src="${esc(logo())}" class="h-16 w-auto max-w-[96px] object-contain shrink-0 bob">
+  <div><div class="font-bold text-xl leading-tight text-blue-700">น้ำดื่มเอ็นวาย</div><div class="text-sm text-slate-500">NY Drinking Water</div></div>
+ </div>
+ <div class="relative mb-3 anim" style="--i:1"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${ic('search','w-4 h-4')}</span><input class="inp !pl-9 !bg-slate-200/60" placeholder="ค้นหาสินค้า" value="${esc(S.q)}" oninput="S.q=this.value;grid(0)"></div>
+ <div id="grid" class="grid grid-cols-2 gap-3"></div>`;
+ grid(1);
+}
+function grid(first,hid){
+ const g=$('#grid');if(!g)return;const L=S.prods.filter(p=>!S.q||(p.name+p.detail).toLowerCase().includes(S.q.toLowerCase()));
+ g.innerHTML=L.length?L.map((p,i)=>{const q=S.cart[p.id]||0;return `
+ <div data-id="${p.id}" class="card press overflow-hidden p-2.5 flex flex-col ${first?'anim':''} ${hid==p.id?'pop':''} ${q?'ring-2 ring-blue-500':''}" style="--i:${i+2}">
+  <button class="relative block -mx-2.5 -mt-2.5 w-[calc(100%+20px)] bg-sky-50 overflow-hidden active:opacity-80 transition-opacity" onclick="chg('${p.id}',1)">
+   <img src="${esc(p.img)}" class="w-full h-36 object-cover" onerror="this.src=IC.bottle">
+   ${q?`<span class="pop absolute top-1.5 right-1.5 bg-blue-600 text-white text-xs font-bold rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center">${q}</span>`:''}
+  </button>
+  <div class="font-semibold text-sm mt-2 leading-tight">${esc(p.name)}</div>
+  <div class="text-xs text-slate-400 min-h-[16px]">${esc(p.detail)}</div>
+  <div class="text-blue-600 font-bold mt-1">฿${money(p.price)} <span class="text-xs font-normal text-slate-400">/${esc(p.unit)}</span></div>
+  <div class="mt-2">${q?`<div class="flex items-center justify-between bg-blue-50 rounded-xl p-1"><button class="w-9 h-9 rounded-lg bg-white text-blue-600 shadow-sm flex items-center justify-center active:scale-90 transition" onclick="chg('${p.id}',-1)">${ic('minus','w-4 h-4')}</button><input type="tel" inputmode="numeric" class="w-10 text-center bg-transparent font-bold text-base outline-none" value="${q}" onchange="setq('${p.id}',this.value)"><button class="w-9 h-9 rounded-lg bg-blue-600 text-white shadow-sm flex items-center justify-center active:scale-90 transition" onclick="chg('${p.id}',1)">${ic('plus','w-4 h-4')}</button></div>`
+   :`<button class="btn pri w-full !py-2 text-sm" onclick="chg('${p.id}',1)">${ic('plus','w-4 h-4')}เพิ่ม</button>`}</div>
+ </div>`}).join(''):'<div class="col-span-2 text-center text-slate-400 py-10">ไม่พบสินค้า</div>';
+}
+function bar(){
+ const b=$('#bar'),n=count();
+ if(S.tab!='sell'||!n){b.innerHTML='';return}
+ const fresh=!b.firstChild;
+ b.innerHTML=`<div class="${fresh?'anim':''} rounded-2xl bg-slate-900/80 backdrop-blur-xl text-white p-3 flex items-center justify-between shadow-xl"><div><div class="text-xs opacity-70">${n} ชิ้น</div><div class="font-bold text-xl pop">฿${money(total())}</div></div><button class="btn pri" onclick="askCust()">${ic('file')}สร้างบิลเงินสด</button></div>`;
+}
+function chg(id,d){const p=S.prods.find(x=>x.id==id);S.cart[id]=Math.max(0,(S.cart[id]||0)+d);if(!S.cart[id])delete S.cart[id];if(d>0)toast('เพิ่ม '+p.name);grid(0,id);bar();if(d>0)fly(id)}
+function setq(id,v){v=Math.max(0,parseInt(v)||0);if(v)S.cart[id]=v;else delete S.cart[id];grid(0,id);bar()}
+
+function rProds(){
+ $('#app').innerHTML=`<div class="flex justify-between items-center mb-3 anim"><h1 class="text-[34px] font-bold tracking-tight">สินค้า</h1><button class="btn pri !py-2" onclick="edit()">${ic('plus')}เพิ่ม</button></div>
+ <div class="space-y-3">${S.prods.map((p,i)=>`<div class="rounded-[22px] anim" style="--i:${i}"><div class="card p-3 flex gap-3 items-center relative" ontouchstart="sw0(event)" ontouchmove="sw1(event,this)" ontouchend="sw2(this,'${p.id}')">
+  <img src="${esc(p.img)}" class="w-16 h-16 rounded-xl object-cover bg-sky-100 shrink-0" onerror="this.src=IC.bottle">
+  <div class="flex-1 min-w-0"><div class="font-semibold truncate">${esc(p.name)}</div><div class="text-xs text-slate-400 truncate">${esc(p.detail)}</div><div class="text-blue-600 font-bold text-sm">฿${money(p.price)} / ${esc(p.unit)}</div></div>
+  <div class="flex flex-col gap-1"><button class="text-sm bg-blue-50 text-blue-600 rounded-lg px-3 py-1.5 flex items-center gap-1" onclick="edit('${p.id}')">${ic('edit','w-4 h-4')}แก้ไข</button><button class="text-sm bg-red-50 text-red-600 rounded-lg px-3 py-1.5 flex items-center gap-1" onclick="del('${p.id}')">${ic('trash','w-4 h-4')}ลบ</button></div></div></div>`).join('')||'<div class="text-center text-slate-400 py-10">ไม่มีสินค้า</div>'}</div>`;
+}
+function del(id){
+ const p=S.prods.find(x=>x.id==id);if(!p)return;
+ $('#ov').innerHTML=`<div class="fade fixed inset-0 bg-black/40 z-50 flex items-end" onclick="if(event.target==this)closeOv()"><div class="sheet bg-white w-full max-w-md mx-auto rounded-t-3xl p-5 space-y-3" style="padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))"><h2 class="text-xl font-bold">ลบสินค้า</h2><p class="text-slate-500">ต้องการลบ "${esc(p.name)}" ใช่หรือไม่?</p><button class="btn w-full bg-red-500 text-white" onclick="doDel('${id}')">${ic('trash')}ลบสินค้า</button><button class="btn w-full bg-slate-100 text-slate-700" onclick="closeOv()">ยกเลิก</button></div></div>`;
+}
+function doDel(id){S.prods=S.prods.filter(p=>p.id!=id);delete S.cart[id];sv('ny_p',S.prods);closeOv();toast('ลบสินค้าแล้ว');render()}
+function edit(id){
+ F=id?{...S.prods.find(p=>p.id==id)}:{id:'p'+Date.now(),name:'',unit:'แพ็ค',price:'',detail:'',img:IC.pack};
+ $('#ov').innerHTML=`<div class="fade fixed inset-0 bg-black/40 z-50 flex items-end" onclick="if(event.target==this)closeOv()">
+ <div class="sheet bg-white w-full max-w-md mx-auto rounded-t-3xl p-5 max-h-[92%] overflow-y-auto space-y-3" style="padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))">
+  <div class="flex justify-between items-center"><h2 class="text-xl font-bold">${id?'แก้ไขสินค้า':'เพิ่มสินค้า'}</h2><button onclick="closeOv()" class="text-slate-400">${ic('x','w-6 h-6')}</button></div>
+  <input class="inp" placeholder="ชื่อสินค้า (เช่น น้ำดื่ม 600 ml)" value="${esc(F.name)}" oninput="F.name=this.value">
+  <div class="grid grid-cols-2 gap-2"><input class="inp" placeholder="หน่วย (แพ็ค/โหล/ถัง)" value="${esc(F.unit)}" oninput="F.unit=this.value"><input class="inp" type="number" inputmode="decimal" placeholder="ราคาต่อหน่วย" value="${F.price}" oninput="F.price=this.value"></div>
+  <input class="inp" placeholder="รายละเอียด (เช่น บรรจุ 12 ขวด)" value="${esc(F.detail)}" oninput="F.detail=this.value">
+  <div class="text-sm font-semibold text-slate-500">รูปสินค้า</div>
+  <div class="flex gap-3 items-center"><img id="pv" src="${esc(F.img)}" class="w-24 h-24 rounded-xl object-cover bg-sky-100">
+   <div class="flex-1 space-y-2"><div class="flex gap-2">${Object.keys(IC).filter(k=>k!='logo').map(k=>`<button class="w-12 h-12 rounded-lg overflow-hidden border-2 border-slate-200 active:scale-90 transition" onclick="pick('${k}')"><img src="${IC[k]}"></button>`).join('')}
+   <label class="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center active:scale-90 transition">${ic('camera')}<input type="file" accept="image/*" class="hidden" onchange="upl(this,'p')"></label></div>
+   <input class="inp !py-2 !text-sm" placeholder="หรือวาง URL รูปภาพ" onchange="F.img=this.value||F.img;$('#pv').src=F.img"></div></div>
+  <button class="btn pri w-full" onclick="saveP()">บันทึกสินค้า</button></div></div>`;
+}
+function pick(k){F.img=IC[k];$('#pv').src=F.img}
+function upl(i,t){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const m=t=='l'?320:640,s=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+ if(t=='l'){S.set.logo=c.toDataURL('image/png');sv('ny_s',S.set);toast('อัปโหลดโลโก้แล้ว');rSet()}else{F.img=c.toDataURL('image/jpeg',.85);$('#pv').src=F.img}};im.src=r.result};r.readAsDataURL(f)}
+function saveP(){
+ if(!F.name.trim()||F.price===''||!(parseFloat(F.price)>=0)){toast('กรอกชื่อและราคาให้ครบ');return}
+ F.price=parseFloat(F.price);F.name=F.name.trim();F.unit=(F.unit||'หน่วย').trim();
+ const i=S.prods.findIndex(p=>p.id==F.id);i>=0?S.prods[i]=F:S.prods.push(F);
+ sv('ny_p',S.prods);closeOv();toast('บันทึกสินค้าแล้ว');render();
+}
+function closeOv(){$('#ov').innerHTML=''}
+
+function rSet(){
+ const L=(t,v)=>`<div><div class="text-sm font-semibold text-slate-500 mb-1">${t}</div><div class="inp flex items-center justify-between gap-2 text-slate-600"><span>${esc(v)}</span><span class="text-slate-400 shrink-0">${ic('lock','w-4 h-4')}</span></div></div>`;
+ $('#app').innerHTML=`<h1 class="text-[34px] font-bold tracking-tight mb-3 anim">ตั้งค่า</h1>
+ <div class="card p-4 space-y-3 anim" style="--i:1">
+  <div class="text-sm font-semibold text-slate-500">โลโก้ร้าน</div>
+  <div class="flex items-center gap-3"><img src="${esc(logo())}" class="w-20 h-20 object-contain">
+   <div class="space-y-2"><label class="btn pri !py-2 text-sm">${ic('camera','w-4 h-4')}เลือกไฟล์โลโก้<input type="file" accept="image/*" class="hidden" onchange="upl(this,'l')"></label>
+   ${S.set.logo?`<button class="block text-sm text-slate-500 underline" onclick="S.set.logo='';sv('ny_s',S.set);rSet()">ใช้โลโก้เริ่มต้น</button>`:''}</div></div>
+  <div class="text-sm font-semibold text-slate-500">ไอคอนแอป (icon.png)</div>
+  <div class="flex items-center gap-3"><img src="${esc(S.set.icon||DEF_ICON||logo())}" class="w-16 h-16 rounded-[14px] object-cover border border-slate-200">
+   <div class="space-y-1"><label class="btn pri !py-2 text-sm">${ic('camera','w-4 h-4')}เลือกไฟล์ icon.png<input type="file" accept="image/*" class="hidden" onchange="uplIcon(this)"></label>
+   <div class="text-xs text-slate-400">Safari: กดแชร์ › เพิ่มไปยังหน้าจอโฮม</div></div></div>
+  ${L('PromptPay',SHOP.pp)}${L('เบอร์โทรร้าน (แสดงบนบิล)',SHOP.ph)}${L('ที่อยู่ร้าน (แสดงบนบิล)',SHOP.ad)}
+  <div class="text-xs text-slate-400">ข้อมูลร้านถูกล็อกไว้ ไม่สามารถแก้ไขในแอป</div>
+ </div>`;
+}
+
+function crc(s){let c=0xFFFF;for(const ch of s){c^=ch.charCodeAt(0)<<8;for(let i=0;i<8;i++)c=c&0x8000?((c<<1)^0x1021)&0xFFFF:(c<<1)&0xFFFF}return c.toString(16).toUpperCase().padStart(4,'0')}
+function ppay(id,amt){
+ id=id.replace(/\D/g,'');const f=(k,v)=>k+String(v.length).padStart(2,'0')+v;
+ const [t,v]=id.length>=13?['02',id]:['01','0066'+id.replace(/^0/,'')];
+ const p='000201010212'+f('29',f('00','A000000677010111')+f(t,v))+'5802TH5303764'+f('54',amt.toFixed(2))+'6304';
+ return p+crc(p);
+}
+
+function askCust(){
+ if(!count()){toast('ยังไม่ได้เลือกสินค้า');return}
+ $('#ov').innerHTML=`<div class="fade fixed inset-0 bg-black/40 z-50 flex items-end" onclick="if(event.target==this)closeOv()"><div class="sheet bg-white w-full max-w-md mx-auto rounded-t-3xl p-5 space-y-3" style="padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))">
+ <div class="flex justify-between items-center"><h2 class="text-xl font-bold">ข้อมูลลูกค้า</h2><button onclick="closeOv()" class="text-slate-400">${ic('x','w-6 h-6')}</button></div>
+ <input class="inp" placeholder="ชื่อลูกค้า / ร้านค้า (ไม่กรอก = ลูกค้าทั่วไป)" value="${esc(S.cust.n)}" oninput="S.cust.n=this.value">
+ <input class="inp" placeholder="เบอร์โทรศัพท์ / ที่อยู่ (ถ้ามี)" value="${esc(S.cust.c)}" oninput="S.cust.c=this.value">
+ <button class="btn pri w-full" onclick="showBill()">${ic('file')}ออกบิลเงินสด · ฿${money(total())}</button></div></div>`;
+}
+function showBill(){
+ const items=S.prods.filter(p=>S.cart[p.id]);if(!items.length){toast('ยังไม่ได้เลือกสินค้า');return}
+ const d=new Date(),key=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+ S.cnt[key]=(S.cnt[key]||0)+1;sv('ny_c',S.cnt);
+ const no=`NY-${key}-${String(S.cnt[key]).padStart(3,'0')}`,T=total(),Q=count();bill=no;
+ const ds=d.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'}),ts=d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})+' น.';
+ const ok=SHOP.pp.replace(/\D/g,'').length>=9,bd='1px solid #CBD5E1',th='padding:7px 5px;border:'+bd+';';
+ $('#ov').innerHTML=`<div class="fade fixed inset-0 z-50 overflow-y-auto" style="background:#E5E7EB;padding-top:env(safe-area-inset-top,0px)">
+ <div class="wrap max-w-md mx-auto p-3" style="padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))">
+  <div class="noprint flex justify-between items-center py-2"><button class="text-blue-600 font-semibold flex items-center" onclick="closeOv()">${ic('back')}กลับ</button><span class="font-semibold">ตัวอย่างบิล</span><span class="w-12"></span></div>
+  <div id="bill" class="anim" style="background:#fff;padding:22px 18px;border-radius:6px;font-family:-apple-system,'Noto Sans Thai',sans-serif;color:#0f172a">
+   <div style="display:flex;gap:12px;align-items:center;padding-bottom:12px;border-bottom:3px solid #0A84FF">
+    <img src="${esc(logo())}" style="width:64px;height:64px;object-fit:contain;border-radius:12px">
+    <div style="flex:1;line-height:1.35"><div style="font-size:19px;font-weight:700;color:#1D4ED8">น้ำดื่มเอ็นวาย</div><div style="font-size:12px;color:#475569;font-weight:600">NY Drinking Water</div>
+     ${SHOP.ad?`<div style="font-size:11px;color:#64748b">${esc(SHOP.ad)}</div>`:''}${SHOP.ph?`<div style="font-size:11px;color:#64748b">โทร. ${esc(SHOP.ph)}</div>`:''}</div>
+   </div>
+   <div style="text-align:center;margin:12px 0;padding:7px;background:#1D4ED8;color:#fff;border-radius:6px"><div style="font-size:22px;font-weight:700;letter-spacing:.5px">บิลเงินสด</div><div style="font-size:11px;letter-spacing:3px">CASH SALE</div></div>
+   <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:10px"><tr>
+    <td style="${th}background:#F1F5F9;width:20%">เลขที่บิล</td><td style="${th}font-weight:700">${no}</td><td style="${th}background:#F1F5F9;width:16%">วันที่</td><td style="${th}">${ds}</td></tr><tr>
+    <td style="${th}background:#F1F5F9">ลูกค้า</td><td style="${th}font-weight:600">${esc(S.cust.n)||'ลูกค้าทั่วไป'}${S.cust.c?`<div style="font-weight:400;color:#64748b;font-size:11px">${esc(S.cust.c)}</div>`:''}</td><td style="${th}background:#F1F5F9">เวลา</td><td style="${th}">${ts}</td></tr></table>
+   <table style="width:100%;font-size:12px;border-collapse:collapse">
+    <thead><tr style="background:#1D4ED8;color:#fff"><th style="${th}width:8%">ที่</th><th style="${th}text-align:left">รายการ</th><th style="${th}white-space:nowrap">จำนวน</th><th style="${th}text-align:right;white-space:nowrap">ราคา/หน่วย</th><th style="${th}text-align:right;white-space:nowrap">จำนวนเงิน</th></tr></thead>
+    <tbody>${items.map((p,i)=>`<tr><td style="${th}text-align:center">${i+1}</td><td style="${th}">${esc(p.name)}<div style="font-size:10px;color:#94a3b8">${esc(p.detail)}</div></td><td style="${th}text-align:center">${S.cart[p.id]} ${esc(p.unit)}</td><td style="${th}text-align:right">${money(p.price)}</td><td style="${th}text-align:right;font-weight:600">${money(p.price*S.cart[p.id])}</td></tr>`).join('')}
+    <tr><td colspan="2" style="${th}background:#F8FAFC;text-align:right;white-space:nowrap">รวมจำนวน</td><td style="${th}text-align:center;background:#F8FAFC">${Q}</td><td colspan="2" style="${th}background:#F8FAFC"></td></tr><tr><td colspan="4" style="${th}text-align:right;background:#EFF6FF;font-weight:700;white-space:nowrap">รวมเป็นเงิน</td><td style="${th}text-align:right;background:#EFF6FF;font-weight:700;font-size:14px;color:#1D4ED8;white-space:nowrap">${money(T)}</td></tr></tbody>
+   </table>
+   <div style="margin-top:8px;padding:8px 10px;background:#F1F5F9;border-radius:6px;font-size:12px;display:flex;justify-content:space-between;gap:8px"><span style="color:#64748b">ตัวอักษร</span><b>( ${bt(T)} )</b></div>
+   <div style="font-size:12px;margin-top:6px">วิธีชำระเงิน: <b>เงินสด</b></div>
+   ${ok?`<div style="text-align:center;margin-top:16px;padding:14px 8px;background:#F8FAFC;border-radius:14px"><div style="font-size:13px;font-weight:700;color:#1D4ED8;margin-bottom:8px">สแกนเพื่อชำระเงิน · PromptPay</div><div id="qr" style="display:inline-block;padding:12px;background:#fff;border:2px solid #1D4ED8;border-radius:14px"></div><div style="font-size:15px;font-weight:700;margin-top:8px">ยอดชำระ ฿${money(T)}</div></div>`:''}
+   <div style="display:flex;gap:16px;font-size:11px;text-align:center;color:#475569;margin-top:14px"><div style="flex:1"><div style="height:40px;border-bottom:1px dotted #64748b"></div>ผู้รับเงิน</div><div style="flex:1"><div style="height:40px;border-bottom:1px dotted #64748b"></div>ผู้ซื้อ</div></div>
+   <div style="text-align:center;font-size:10px;color:#94a3b8;margin-top:12px;border-top:1px solid #E2E8F0;padding-top:8px">ขอบคุณที่ใช้บริการ · เอกสารนี้เป็นบิลเงินสด ไม่ใช่ใบเสร็จรับเงิน</div>
+  </div>
+  <div class="noprint grid grid-cols-2 gap-2 mt-4">
+   <button class="btn pri col-span-2" onclick="shareImg()">${ic('printer')}แชร์ไปแอปเครื่องพิมพ์</button>
+   <button class="btn bg-white text-slate-700" onclick="window.print()">${ic('printer')}พิมพ์ AirPrint</button>
+   <button class="btn bg-white text-slate-700" onclick="shareImg(1)">${ic('dl')}บันทึกรูป</button>
+   <button class="btn bg-white text-slate-700 col-span-2" onclick="newBill()">${ic('plus')}เริ่มบิลใหม่</button>
+  </div></div></div>`;
+ if(ok)try{new QRCode($('#qr'),{text:ppay(SHOP.pp,T),width:600,height:600,correctLevel:QRCode.CorrectLevel.M});document.querySelectorAll('#qr img,#qr canvas').forEach(e=>{e.style.width='210px';e.style.height='210px'})}catch(e){}
+ celebrate();
+}
+function newBill(){S.cart={};S.cust={n:'',c:''};closeOv();render()}
+async function shareImg(saveOnly){
+ toast('กำลังสร้างรูปภาพ');
+ try{
+  const c=await html2canvas($('#bill'),{scale:3,backgroundColor:'#ffffff',useCORS:true});
+  c.toBlob(async b=>{
+   const f=new File([b],bill+'.png',{type:'image/png'});
+   if(!saveOnly&&navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:bill});return}catch(e){if(e.name==='AbortError')return}}
+   const u=URL.createObjectURL(b),d=document.createElement('div');
+   d.className='fade fixed inset-0 z-[60] bg-black/80 overflow-y-auto p-4 text-center';
+   d.innerHTML=`<div class="text-white text-sm mb-2">กดค้างที่รูป แล้วเลือก "เพิ่มไปยังรูปภาพ"</div><img src="${u}" class="mx-auto max-w-full rounded"><a href="${u}" download="${bill}.png" class="btn pri mt-3">${ic('dl')}ดาวน์โหลด</a> <button class="btn bg-white mt-3" onclick="this.parentNode.remove()">ปิด</button>`;
+   document.body.appendChild(d);
+  },'image/png');
+ }catch(e){toast('สร้างรูปไม่สำเร็จ ลองอีกครั้ง')}
+}
+const DEF_ICON='';
+function setIcon(src){try{const im=new Image();im.onload=()=>{try{const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,180,180);const k=Math.min(180/im.width,180/im.height);x.drawImage(im,(180-im.width*k)/2,(180-im.height*k)/2,im.width*k,im.height*k);const u=c.toDataURL('image/png');$('#ati').href=u;$('#fav').href=u}catch(e){}};im.src=src}catch(e){}}
+function uplIcon(i){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{S.set.icon=r.result;try{sv('ny_s',S.set)}catch(e){}setIcon(r.result);toast('เปลี่ยนไอคอนแล้ว');rSet()};r.readAsDataURL(f)}
+let sx=0;
+function sw0(e){sx=e.touches[0].clientX}
+function sw1(e,el){const d=Math.min(0,e.touches[0].clientX-sx);el.style.transition='none';el.style.transform=`translateX(${d}px)`;el.parentNode.style.background=d<-8?'#ef4444':''}
+function sw2(el,id){const m=new DOMMatrix(getComputedStyle(el).transform).m41;el.style.transition='transform .45s var(--spring)';el.style.transform='';setTimeout(()=>el.parentNode.style.background='',400);if(m<-90)del(id)}
+function fly(id){
+ const im=document.querySelector(`#grid [data-id="${id}"] img`),b=$('#bar');if(!im||!b)return;
+ const a=im.getBoundingClientRect(),t=b.getBoundingClientRect(),c=document.createElement('img');c.src=im.src;
+ c.style.cssText=`position:fixed;z-index:80;left:${a.left+a.width/2-24}px;top:${a.top+a.height/2-24}px;width:48px;height:48px;object-fit:contain;border-radius:14px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25);pointer-events:none;transition:all .65s cubic-bezier(.5,-.2,.7,1)`;
+ document.body.appendChild(c);
+ requestAnimationFrame(()=>{c.style.left=(t.left+24)+'px';c.style.top=(t.top+8)+'px';c.style.transform='scale(.4)';c.style.opacity='.3'});
+ setTimeout(()=>c.remove(),700);
+}
+function celebrate(){
+ const o=document.createElement('div');o.className='fixed inset-0 z-[70] flex items-center justify-center bg-white/70 backdrop-blur-md pointer-events-none';o.style.animation='fade .2s both,fade .3s .9s reverse both';
+ o.innerHTML='<svg viewBox="0 0 52 52" class="w-28 h-28"><circle cx="26" cy="26" r="24" fill="#0A84FF" style="animation:pop .5s var(--spring)"/><path d="M14 27l8 8 16-17" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="40" stroke-dashoffset="40" style="animation:draw .5s .3s ease-out forwards"/></svg>';
+ document.body.appendChild(o);setTimeout(()=>o.remove(),1250);
+}
+addEventListener('scroll',()=>{$('#nav').style.opacity=scrollY>50?1:0},{passive:true});
+setIcon(S.set.icon||DEF_ICON||logo());
+tabs();render();
+</script>
+</body>
+</html>
